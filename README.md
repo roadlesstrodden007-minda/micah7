@@ -58,4 +58,4 @@ README.md    — this file
 
 Built with [Claude](https://claude.ai).
 
-Idea by: *Roadlesstrodden*
+Creative Idea by: *Roadlesstrodden*

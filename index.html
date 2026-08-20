@@ -397,8 +397,8 @@
 
   async function loadNotes(){
     try{
-      const res = await window.storage.get(STORE_KEY, false);
-      notes = res ? JSON.parse(res.value) : [];
+      const raw = localStorage.getItem(STORE_KEY);
+      notes = raw ? JSON.parse(raw) : [];
     }catch(e){
       notes = [];
     }
@@ -409,9 +409,9 @@
     const el = document.getElementById('saveState');
     if(el) el.textContent = 'Saving…';
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(async ()=>{
+    saveTimer = setTimeout(()=>{
       try{
-        await window.storage.set(STORE_KEY, JSON.stringify(notes), false);
+        localStorage.setItem(STORE_KEY, JSON.stringify(notes));
         if(el) el.textContent = 'Saved';
       }catch(e){
         if(el) el.textContent = 'Save failed';

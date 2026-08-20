@@ -57,5 +57,4 @@ README.md    — this file
 ## Credits
 
 Built with [Claude](https://claude.ai).
-
-*Roadlesstrodden*
+Idea by: *Roadlesstrodden*

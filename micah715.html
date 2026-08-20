@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Micah715</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --parchment:#F6F1E5;
+    --paper:#FFFDF8;
+    --ink:#2B2A28;
+    --ink-soft:#6B665C;
+    --navy:#24344D;
+    --gold:#B8912F;
+    --gold-soft:#EFE3C2;
+    --sage:#6E8B6E;
+    --sage-soft:#DCE7DC;
+    --clay:#A85D42;
+    --clay-soft:#EFDCD4;
+    --line:#E3DAC5;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%; margin:0;}
+  body{
+    background:#DCD4BE;
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+    display:flex;
+    justify-content:center;
+    min-height:100vh;
+  }
+  #app{
+    width:100%;
+    max-width:480px;
+    min-height:100vh;
+    background:var(--parchment);
+    display:flex;
+    flex-direction:column;
+    position:relative;
+    box-shadow:0 0 40px rgba(0,0,0,0.15);
+    overflow:hidden;
+  }
+
+  /* ---------- HEADER / RIBBON TABS ---------- */
+  header{
+    background:var(--navy);
+    padding:18px 20px 0 20px;
+    position:relative;
+    z-index:5;
+  }
+  .brand{
+    display:flex;
+    align-items:baseline;
+    gap:8px;
+    margin-bottom:14px;
+  }
+  .brand h1{
+    font-family:'Lora',serif;
+    font-weight:700;
+    font-size:24px;
+    color:#FBF6E9;
+    margin:0;
+    letter-spacing:0.3px;
+  }
+  .brand span{
+    font-size:11px;
+    color:#B9C2D1;
+    font-style:italic;
+    font-family:'Lora',serif;
+  }
+  .today-date{
+    font-size:12px;
+    color:#D9C98A;
+    font-family:'Inter',sans-serif;
+    font-weight:500;
+    letter-spacing:0.3px;
+    margin:-6px 0 14px 0;
+  }
+  .ribbons{
+    display:flex;
+    gap:6px;
+    padding-left:2px;
+  }
+  .ribbon{
+    flex:1;
+    border:none;
+    cursor:pointer;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:12.5px;
+    color:var(--ink);
+    padding:12px 4px 22px 4px;
+    text-align:center;
+    position:relative;
+    border-radius:8px 8px 0 0;
+    transform:translateY(8px);
+    transition:transform .18s ease, padding-bottom .18s ease;
+    clip-path:polygon(0 0,100% 0,100% 78%,50% 100%,0 78%);
+    opacity:0.72;
+  }
+  .ribbon.bible{background:var(--gold-soft); color:#5C4813;}
+  .ribbon.grocery{background:var(--sage-soft); color:#33472F;}
+  .ribbon.other{background:var(--clay-soft); color:#5C2E1D;}
+  .ribbon.active{
+    transform:translateY(0);
+    opacity:1;
+    box-shadow:0 -2px 10px rgba(0,0,0,0.18);
+  }
+  .ribbon .icon{display:block; font-size:16px; margin-bottom:2px;}
+
+  /* ---------- MAIN ---------- */
+  main{
+    flex:1;
+    overflow-y:auto;
+    padding:18px 16px 100px 16px;
+  }
+  .empty{
+    text-align:center;
+    margin-top:60px;
+    color:var(--ink-soft);
+  }
+  .empty .glyph{font-size:34px; display:block; margin-bottom:10px;}
+  .empty p{font-family:'Lora',serif; font-style:italic; font-size:15px; margin:0;}
+
+  .note-card{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px 16px;
+    margin-bottom:12px;
+    cursor:pointer;
+    position:relative;
+    border-left:4px solid var(--gold);
+    box-shadow:0 1px 3px rgba(43,42,40,0.05);
+  }
+  .note-card.grocery{border-left-color:var(--sage);}
+  .note-card.other{border-left-color:var(--clay);}
+  .note-card h3{
+    font-family:'Lora',serif;
+    font-size:16.5px;
+    margin:0 0 4px 0;
+    color:var(--ink);
+  }
+  .note-card .snippet{
+    font-size:13px;
+    color:var(--ink-soft);
+    line-height:1.4;
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+  .note-card .meta{
+    font-size:11px;
+    color:#A79E8E;
+    margin-top:8px;
+  }
+  .note-card .ref{
+    display:inline-block;
+    font-family:'Lora',serif;
+    font-style:italic;
+    font-size:12px;
+    color:var(--gold);
+    margin-bottom:4px;
+  }
+  .note-card .progress{font-size:11.5px; color:var(--sage); font-weight:600; margin-top:6px;}
+
+  /* ---------- FAB ---------- */
+  .fab{
+    position:absolute;
+    right:20px;
+    bottom:28px;
+    width:56px;
+    height:56px;
+    border-radius:50%;
+    background:var(--navy);
+    color:#FBF6E9;
+    border:none;
+    font-size:26px;
+    line-height:56px;
+    text-align:center;
+    box-shadow:0 6px 16px rgba(36,52,77,0.4);
+    cursor:pointer;
+    z-index:10;
+  }
+
+  /* ---------- EDITOR ---------- */
+  #editor{
+    position:absolute;
+    inset:0;
+    background:var(--parchment);
+    display:none;
+    flex-direction:column;
+    z-index:20;
+  }
+  #editor.open{display:flex;}
+  .editor-head{
+    background:var(--navy);
+    padding:16px 14px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .editor-head button{
+    background:none;
+    border:none;
+    color:#FBF6E9;
+    font-size:20px;
+    cursor:pointer;
+    padding:4px 8px;
+  }
+  .editor-head .save-state{
+    margin-left:auto;
+    font-size:11.5px;
+    color:#B9C2D1;
+    font-style:italic;
+    font-family:'Lora',serif;
+  }
+  .editor-body{
+    flex:1;
+    overflow-y:auto;
+    padding:18px 18px 40px 18px;
+  }
+  .editor-body input[type=text]{
+    width:100%;
+    border:none;
+    background:none;
+    font-family:'Lora',serif;
+    font-weight:600;
+    font-size:21px;
+    color:var(--ink);
+    margin-bottom:6px;
+    padding:2px 0;
+  }
+  .editor-body input[type=text]:focus{outline:none;}
+  .editor-body .ref-input{
+    font-family:'Lora',serif;
+    font-style:italic;
+    font-size:14px;
+    color:var(--gold);
+    border:none;
+    background:none;
+    width:100%;
+    margin-bottom:14px;
+    padding:2px 0;
+  }
+  .editor-body .ref-input:focus{outline:none;}
+  .editor-body .entry-date{
+    font-size:12px;
+    color:var(--ink-soft);
+    margin:0 0 14px 0;
+    font-family:'Inter',sans-serif;
+  }
+  .editor-body textarea{
+    width:100%;
+    min-height:340px;
+    border:none;
+    background:none;
+    resize:none;
+    font-family:'Inter',sans-serif;
+    font-size:15px;
+    line-height:1.6;
+    color:var(--ink);
+  }
+  .editor-body textarea:focus{outline:none;}
+  hr.divider{border:none; border-top:1px solid var(--line); margin:2px 0 16px 0;}
+
+  .delete-btn{
+    display:block;
+    margin:24px auto 0 auto;
+    background:none;
+    border:1px solid #C7897A;
+    color:#A8402A;
+    font-size:13px;
+    padding:9px 18px;
+    border-radius:20px;
+    cursor:pointer;
+    font-family:'Inter',sans-serif;
+  }
+
+  /* Grocery items */
+  .item-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .item-row input[type=checkbox]{
+    width:19px; height:19px;
+    accent-color:var(--sage);
+    flex-shrink:0;
+  }
+  .item-row input[type=text]{
+    flex:1;
+    border:none;
+    background:none;
+    font-size:15px;
+    color:var(--ink);
+    padding:2px 0;
+  }
+  .item-row input[type=text]:focus{outline:none;}
+  .item-row.checked input[type=text]{
+    color:#A79E8E;
+    text-decoration:line-through;
+  }
+  .item-row .rm{
+    background:none; border:none; color:#C7897A; font-size:16px; cursor:pointer; padding:4px;
+  }
+  .add-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:12px 0 0 0;
+  }
+  .add-item input{
+    flex:1;
+    border:none;
+    border-bottom:1px dashed var(--line);
+    background:none;
+    font-size:15px;
+    padding:6px 0;
+  }
+  .add-item input:focus{outline:none;}
+  .add-item button{
+    background:var(--sage);
+    color:#fff;
+    border:none;
+    width:32px; height:32px;
+    border-radius:50%;
+    font-size:18px;
+    cursor:pointer;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="brand">
+      <h1>Micah715</h1>
+      <span>"walk humbly" — a place for your notes</span>
+    </div>
+    <div class="today-date" id="todayDate"></div>
+    <div class="ribbons">
+      <button class="ribbon bible active" data-cat="bible"><span class="icon">✝</span>Bible Notes</button>
+      <button class="ribbon grocery" data-cat="grocery"><span class="icon">🛒</span>Grocery</button>
+      <button class="ribbon other" data-cat="other"><span class="icon">✎</span>Other</button>
+    </div>
+  </header>
+
+  <main id="list"></main>
+
+  <button class="fab" id="fab">+</button>
+
+  <!-- EDITOR -->
+  <div id="editor">
+    <div class="editor-head">
+      <button id="back">←</button>
+      <span class="save-state" id="saveState">Saved</span>
+    </div>
+    <div class="editor-body" id="editorBody"></div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  const STORE_KEY = 'micah715-notes-v1';
+  let notes = [];
+  let currentCat = 'bible';
+  let openId = null;
+  let saveTimer = null;
+
+  const catLabel = {bible:'Bible Notes', grocery:'Grocery', other:'Other'};
+
+  async function loadNotes(){
+    try{
+      const res = await window.storage.get(STORE_KEY, false);
+      notes = res ? JSON.parse(res.value) : [];
+    }catch(e){
+      notes = [];
+    }
+    render();
+  }
+
+  function scheduleSave(){
+    const el = document.getElementById('saveState');
+    if(el) el.textContent = 'Saving…';
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(async ()=>{
+      try{
+        await window.storage.set(STORE_KEY, JSON.stringify(notes), false);
+        if(el) el.textContent = 'Saved';
+      }catch(e){
+        if(el) el.textContent = 'Save failed';
+      }
+    }, 400);
+  }
+
+  function fmtTime(ts){
+    const d = new Date(ts);
+    return d.toLocaleDateString(undefined,{month:'short',day:'numeric'}) + ' · ' + d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
+  }
+
+  function fmtEntryDate(ts){
+    const d = new Date(ts);
+    return d.toLocaleDateString(undefined,{ weekday:'long', month:'long', day:'numeric', year:'numeric' });
+  }
+
+  function render(){
+    // ribbons
+    document.querySelectorAll('.ribbon').forEach(r=>{
+      r.classList.toggle('active', r.dataset.cat === currentCat);
+    });
+    const list = document.getElementById('list');
+    const items = notes.filter(n=>n.cat===currentCat).sort((a,b)=>b.updated-a.updated);
+    if(items.length===0){
+      const glyphs = {bible:'✝', grocery:'🛒', other:'✎'};
+      const msgs = {
+        bible:'No notes yet. Tap + to record a reflection or study.',
+        grocery:'No lists yet. Tap + to start a grocery list.',
+        other:'Nothing here yet. Tap + to jot something down.'
+      };
+      list.innerHTML = `<div class="empty"><span class="glyph">${glyphs[currentCat]}</span><p>${msgs[currentCat]}</p></div>`;
+      return;
+    }
+    list.innerHTML = items.map(n=>{
+      if(n.cat==='grocery'){
+        const total = (n.items||[]).length;
+        const done = (n.items||[]).filter(i=>i.checked).length;
+        const preview = (n.items||[]).slice(0,3).map(i=>i.text).filter(Boolean).join(', ') || 'Empty list';
+        return `<div class="note-card grocery" data-id="${n.id}">
+          <h3>${escapeHtml(n.title||'Untitled list')}</h3>
+          <div class="snippet">${escapeHtml(preview)}</div>
+          <div class="progress">${done}/${total} checked off</div>
+          <div class="meta">${fmtTime(n.updated)}</div>
+        </div>`;
+      } else {
+        const ref = n.cat==='bible' && n.ref ? `<div class="ref">${escapeHtml(n.ref)}</div>` : '';
+        return `<div class="note-card ${n.cat}" data-id="${n.id}">
+          ${ref}
+          <h3>${escapeHtml(n.title||'Untitled')}</h3>
+          <div class="snippet">${escapeHtml(n.body||'')}</div>
+          <div class="meta">${fmtTime(n.updated)}</div>
+        </div>`;
+      }
+    }).join('');
+
+    list.querySelectorAll('.note-card').forEach(card=>{
+      card.addEventListener('click', ()=> openNote(card.dataset.id));
+    });
+  }
+
+  function escapeHtml(s){
+    return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function newNote(cat){
+    const n = {
+      id: 'n' + Date.now() + Math.random().toString(36).slice(2,7),
+      cat, title:'', body:'', ref:'', items:[],
+      created: Date.now(), updated: Date.now()
+    };
+    notes.push(n);
+    openNote(n.id, true);
+  }
+
+  function openNote(id, isNew){
+    openId = id;
+    const n = notes.find(x=>x.id===id);
+    const body = document.getElementById('editorBody');
+    document.getElementById('editor').classList.add('open');
+
+    if(n.cat === 'grocery'){
+      body.innerHTML = `
+        <input type="text" id="f-title" placeholder="List name" value="${escapeHtml(n.title)}">
+        <div class="entry-date">${fmtEntryDate(n.created)}</div>
+        <hr class="divider">
+        <div id="itemsWrap"></div>
+        <div class="add-item">
+          <input type="text" id="newItemInput" placeholder="Add an item…">
+          <button id="addItemBtn">+</button>
+        </div>
+        <button class="delete-btn" id="delBtn">Delete list</button>
+      `;
+      renderItems();
+      document.getElementById('f-title').addEventListener('input', e=>{ n.title = e.target.value; n.updated=Date.now(); scheduleSave(); });
+      document.getElementById('addItemBtn').addEventListener('click', addItem);
+      document.getElementById('newItemInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); addItem(); } });
+      document.getElementById('delBtn').addEventListener('click', ()=>deleteNote(n.id));
+      if(isNew) setTimeout(()=>document.getElementById('f-title').focus(), 50);
+    } else {
+      const isBible = n.cat === 'bible';
+      body.innerHTML = `
+        <input type="text" id="f-title" placeholder="${isBible ? 'Title / topic' : 'Title'}" value="${escapeHtml(n.title)}">
+        ${isBible ? `<input type="text" class="ref-input" id="f-ref" placeholder="Scripture reference (e.g. Micah 7:15)" value="${escapeHtml(n.ref)}">` : ''}
+        <div class="entry-date">${fmtEntryDate(n.created)}</div>
+        <hr class="divider">
+        <textarea id="f-body" placeholder="${isBible ? 'Write your reflection or study notes…' : 'Write your note…'}">${escapeHtml(n.body)}</textarea>
+        <button class="delete-btn" id="delBtn">Delete note</button>
+      `;
+      document.getElementById('f-title').addEventListener('input', e=>{ n.title=e.target.value; n.updated=Date.now(); scheduleSave(); });
+      if(isBible) document.getElementById('f-ref').addEventListener('input', e=>{ n.ref=e.target.value; n.updated=Date.now(); scheduleSave(); });
+      document.getElementById('f-body').addEventListener('input', e=>{ n.body=e.target.value; n.updated=Date.now(); scheduleSave(); });
+      document.getElementById('delBtn').addEventListener('click', ()=>deleteNote(n.id));
+      if(isNew) setTimeout(()=>document.getElementById('f-title').focus(), 50);
+    }
+
+    function addItem(){
+      const inp = document.getElementById('newItemInput');
+      const val = inp.value.trim();
+      if(!val) return;
+      n.items.push({text:val, checked:false});
+      n.updated = Date.now();
+      inp.value='';
+      renderItems();
+      scheduleSave();
+      inp.focus();
+    }
+
+    function renderItems(){
+      const wrap = document.getElementById('itemsWrap');
+      wrap.innerHTML = n.items.map((it,idx)=>`
+        <div class="item-row ${it.checked?'checked':''}" data-idx="${idx}">
+          <input type="checkbox" ${it.checked?'checked':''}>
+          <input type="text" value="${escapeHtml(it.text)}">
+          <button class="rm">✕</button>
+        </div>
+      `).join('');
+      wrap.querySelectorAll('.item-row').forEach(row=>{
+        const idx = +row.dataset.idx;
+        row.querySelector('input[type=checkbox]').addEventListener('change', e=>{
+          n.items[idx].checked = e.target.checked;
+          n.updated = Date.now();
+          row.classList.toggle('checked', e.target.checked);
+          scheduleSave();
+        });
+        row.querySelector('input[type=text]').addEventListener('input', e=>{
+          n.items[idx].text = e.target.value;
+          n.updated = Date.now();
+          scheduleSave();
+        });
+        row.querySelector('.rm').addEventListener('click', ()=>{
+          n.items.splice(idx,1);
+          n.updated = Date.now();
+          renderItems();
+          scheduleSave();
+        });
+      });
+    }
+  }
+
+  function deleteNote(id){
+    notes = notes.filter(n=>n.id!==id);
+    scheduleSave();
+    closeEditor();
+  }
+
+  function closeEditor(){
+    document.getElementById('editor').classList.remove('open');
+    openId = null;
+    render();
+  }
+
+  document.querySelectorAll('.ribbon').forEach(r=>{
+    r.addEventListener('click', ()=>{ currentCat = r.dataset.cat; render(); });
+  });
+  document.getElementById('fab').addEventListener('click', ()=> newNote(currentCat));
+  document.getElementById('back').addEventListener('click', closeEditor);
+
+  const dateEl = document.getElementById('todayDate');
+  if(dateEl){
+    dateEl.textContent = new Date().toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+  }
+
+  loadNotes();
+})();
+</script>
+</body>
+</html>

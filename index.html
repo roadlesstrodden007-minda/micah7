@@ -358,7 +358,7 @@
   <header>
     <div class="brand">
       <h1>Micah715</h1>
-      <span>"walk humbly" — a place for your notes</span>
+      <span>"marvelous things..." — a place for your notes</span>
     </div>
     <div class="today-date" id="todayDate"></div>
     <div class="ribbons">
@@ -410,14 +410,29 @@
     if(el) el.textContent = 'Saving…';
     clearTimeout(saveTimer);
     saveTimer = setTimeout(()=>{
-      try{
-        localStorage.setItem(STORE_KEY, JSON.stringify(notes));
-        if(el) el.textContent = 'Saved';
-      }catch(e){
-        if(el) el.textContent = 'Save failed';
-      }
+      forceSave();
     }, 400);
   }
+
+  function forceSave(){
+    clearTimeout(saveTimer);
+    const el = document.getElementById('saveState');
+    try{
+      localStorage.setItem(STORE_KEY, JSON.stringify(notes));
+      if(el) el.textContent = 'Saved';
+    }catch(e){
+      if(el) el.textContent = 'Save failed';
+    }
+  }
+
+  // Flush any pending save immediately if the app is backgrounded, hidden,
+  // or closed — relying on the debounce timer alone can lose data if the
+  // OS suspends the page (common with iOS home-screen web apps) before it fires.
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState === 'hidden') forceSave();
+  });
+  window.addEventListener('pagehide', forceSave);
+  window.addEventListener('beforeunload', forceSave);
 
   function fmtTime(ts){
     const d = new Date(ts);
@@ -579,6 +594,7 @@
   }
 
   function closeEditor(){
+    forceSave();
     document.getElementById('editor').classList.remove('open');
     openId = null;
     render();

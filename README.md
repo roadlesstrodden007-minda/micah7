@@ -2,7 +2,7 @@
 
 A simple, personal note-taking app for Bible reflections, grocery lists, and everything else — built as a single self-contained HTML file, installable to your phone's home screen like a native app.
 
-> *"walk humbly" — a place for your notes*
+> *""marvelous things..."" — a place for your notes*
 
 ## Features
 

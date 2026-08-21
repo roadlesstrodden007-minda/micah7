@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js"></script>
 <style>
   :root{
     --parchment:#F6F1E5;
@@ -297,6 +298,58 @@
     font-family:'Inter',sans-serif;
   }
 
+  .scan-btn{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    width:100%;
+    background:var(--gold-soft);
+    color:#5C4813;
+    border:1px dashed var(--gold);
+    font-size:13px;
+    font-weight:600;
+    padding:10px 14px;
+    border-radius:10px;
+    cursor:pointer;
+    font-family:'Inter',sans-serif;
+    margin-bottom:16px;
+  }
+  .scan-btn:active{opacity:0.8;}
+
+  .scan-overlay{
+    position:absolute;
+    inset:0;
+    background:rgba(36,52,77,0.92);
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:14px;
+    z-index:50;
+    color:#FBF6E9;
+    text-align:center;
+    padding:0 30px;
+  }
+  .scan-overlay.open{display:flex;}
+  .scan-spinner{
+    width:38px; height:38px;
+    border-radius:50%;
+    border:3px solid rgba(251,246,233,0.25);
+    border-top-color:var(--gold);
+    animation:spin 0.8s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .scan-overlay .scan-label{
+    font-family:'Lora',serif;
+    font-style:italic;
+    font-size:14px;
+  }
+  .scan-overlay .scan-pct{
+    font-size:12px;
+    color:#D9C98A;
+  }
+
   /* Grocery items */
   .item-row{
     display:flex;
@@ -382,6 +435,14 @@
     </div>
     <div class="editor-body" id="editorBody"></div>
   </div>
+
+  <div class="scan-overlay" id="scanOverlay">
+    <div class="scan-spinner"></div>
+    <div class="scan-label" id="scanLabel">Reading your screenshot…</div>
+    <div class="scan-pct" id="scanPct"></div>
+  </div>
+
+  <input type="file" id="scanFileInput" accept="image/*" capture="environment" style="display:none;">
 
 </div>
 
@@ -513,6 +574,7 @@
         <input type="text" id="f-title" placeholder="List name" value="${escapeHtml(n.title)}">
         <div class="entry-date">${fmtEntryDate(n.created)}</div>
         <hr class="divider">
+        <button class="scan-btn" id="scanBtn">📷 Scan a screenshot to add items</button>
         <div id="itemsWrap"></div>
         <div class="add-item">
           <input type="text" id="newItemInput" placeholder="Add an item…">
@@ -525,6 +587,13 @@
       document.getElementById('addItemBtn').addEventListener('click', addItem);
       document.getElementById('newItemInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); addItem(); } });
       document.getElementById('delBtn').addEventListener('click', ()=>deleteNote(n.id));
+      document.getElementById('scanBtn').addEventListener('click', ()=> triggerScan(text=>{
+        const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
+        lines.forEach(l=> n.items.push({text:l, checked:false}));
+        n.updated = Date.now();
+        renderItems();
+        scheduleSave();
+      }));
       if(isNew) setTimeout(()=>document.getElementById('f-title').focus(), 50);
     } else {
       const isBible = n.cat === 'bible';
@@ -533,6 +602,7 @@
         ${isBible ? `<input type="text" class="ref-input" id="f-ref" placeholder="Scripture reference (e.g. Micah 7:15)" value="${escapeHtml(n.ref)}">` : ''}
         <div class="entry-date">${fmtEntryDate(n.created)}</div>
         <hr class="divider">
+        <button class="scan-btn" id="scanBtn">📷 Scan a screenshot of notes</button>
         <textarea id="f-body" placeholder="${isBible ? 'Write your reflection or study notes…' : 'Write your note…'}">${escapeHtml(n.body)}</textarea>
         <button class="delete-btn" id="delBtn">Delete note</button>
       `;
@@ -540,6 +610,13 @@
       if(isBible) document.getElementById('f-ref').addEventListener('input', e=>{ n.ref=e.target.value; n.updated=Date.now(); scheduleSave(); });
       document.getElementById('f-body').addEventListener('input', e=>{ n.body=e.target.value; n.updated=Date.now(); scheduleSave(); });
       document.getElementById('delBtn').addEventListener('click', ()=>deleteNote(n.id));
+      document.getElementById('scanBtn').addEventListener('click', ()=> triggerScan(text=>{
+        const ta = document.getElementById('f-body');
+        n.body = n.body ? (n.body + '\n' + text) : text;
+        ta.value = n.body;
+        n.updated = Date.now();
+        scheduleSave();
+      }));
       if(isNew) setTimeout(()=>document.getElementById('f-title').focus(), 50);
     }
 
@@ -592,6 +669,51 @@
     scheduleSave();
     closeEditor();
   }
+
+  // ---- OCR: scan a screenshot/photo of notes into text ----
+  const scanFileInput = document.getElementById('scanFileInput');
+  const scanOverlay = document.getElementById('scanOverlay');
+  const scanLabel = document.getElementById('scanLabel');
+  const scanPct = document.getElementById('scanPct');
+  let scanCallback = null;
+
+  function triggerScan(onDone){
+    if(typeof Tesseract === 'undefined'){
+      alert('OCR library failed to load. Check your internet connection and try again.');
+      return;
+    }
+    scanCallback = onDone;
+    scanFileInput.value = '';
+    scanFileInput.click();
+  }
+
+  scanFileInput.addEventListener('change', async ()=>{
+    const file = scanFileInput.files && scanFileInput.files[0];
+    if(!file) return;
+    scanOverlay.classList.add('open');
+    scanLabel.textContent = 'Reading your screenshot…';
+    scanPct.textContent = '';
+    try{
+      const result = await Tesseract.recognize(file, 'eng', {
+        logger: msg=>{
+          if(msg.status && typeof msg.progress === 'number'){
+            scanLabel.textContent = msg.status.charAt(0).toUpperCase() + msg.status.slice(1) + '…';
+            scanPct.textContent = Math.round(msg.progress * 100) + '%';
+          }
+        }
+      });
+      const text = (result && result.data && result.data.text || '').trim();
+      scanOverlay.classList.remove('open');
+      if(!text){
+        alert('No text was recognized in that image. Try a clearer photo or screenshot.');
+        return;
+      }
+      if(scanCallback) scanCallback(text);
+    }catch(e){
+      scanOverlay.classList.remove('open');
+      alert('Something went wrong reading that image. Please try again.');
+    }
+  });
 
   function closeEditor(){
     forceSave();

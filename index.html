@@ -350,6 +350,35 @@
     color:#D9C98A;
   }
 
+  .move-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom:16px;
+  }
+  .move-row .move-label{
+    font-size:12px;
+    color:var(--ink-soft);
+    font-family:'Inter',sans-serif;
+    margin-right:2px;
+  }
+  .move-chip{
+    background:none;
+    border:1px solid var(--line);
+    color:var(--ink);
+    font-size:12px;
+    font-weight:600;
+    padding:6px 12px;
+    border-radius:16px;
+    cursor:pointer;
+    font-family:'Inter',sans-serif;
+  }
+  .move-chip.bible{border-color:var(--gold); color:#8A6A1E;}
+  .move-chip.grocery{border-color:var(--sage); color:#3F5A3F;}
+  .move-chip.other{border-color:var(--clay); color:#7A4230;}
+  .move-chip:active{opacity:0.7;}
+
   /* Grocery items */
   .item-row{
     display:flex;
@@ -573,6 +602,7 @@
       body.innerHTML = `
         <input type="text" id="f-title" placeholder="List name" value="${escapeHtml(n.title)}">
         <div class="entry-date">${fmtEntryDate(n.created)}</div>
+        <div class="move-row" id="moveRow"><span class="move-label">Move to:</span></div>
         <hr class="divider">
         <button class="scan-btn" id="scanBtn">📷 Scan a screenshot to add items</button>
         <div id="itemsWrap"></div>
@@ -583,6 +613,7 @@
         <button class="delete-btn" id="delBtn">Delete list</button>
       `;
       renderItems();
+      renderMoveChips(n);
       document.getElementById('f-title').addEventListener('input', e=>{ n.title = e.target.value; n.updated=Date.now(); scheduleSave(); });
       document.getElementById('addItemBtn').addEventListener('click', addItem);
       document.getElementById('newItemInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); addItem(); } });
@@ -601,6 +632,7 @@
         <input type="text" id="f-title" placeholder="${isBible ? 'Title / topic' : 'Title'}" value="${escapeHtml(n.title)}">
         ${isBible ? `<input type="text" class="ref-input" id="f-ref" placeholder="Scripture reference (e.g. Micah 7:15)" value="${escapeHtml(n.ref)}">` : ''}
         <div class="entry-date">${fmtEntryDate(n.created)}</div>
+        <div class="move-row" id="moveRow"><span class="move-label">Move to:</span></div>
         <hr class="divider">
         <button class="scan-btn" id="scanBtn">📷 Scan a screenshot of notes</button>
         <textarea id="f-body" placeholder="${isBible ? 'Write your reflection or study notes…' : 'Write your note…'}">${escapeHtml(n.body)}</textarea>
@@ -617,6 +649,7 @@
         n.updated = Date.now();
         scheduleSave();
       }));
+      renderMoveChips(n);
       if(isNew) setTimeout(()=>document.getElementById('f-title').focus(), 50);
     }
 
@@ -687,6 +720,24 @@
     scanFileInput.click();
   }
 
+  // Cleans up raw OCR text: normalizes line endings, trims stray whitespace,
+  // collapses excess blank lines, fixes hyphenated word-breaks, and tidies
+  // spacing — without altering the actual wording.
+  function formatOcrText(raw){
+    let text = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    // rejoin words that got hyphen-broken across a line wrap (e.g. "bless-\ning")
+    text = text.replace(/(\w)-\n(\w)/g, '$1$2');
+    // trim trailing/leading whitespace on each line
+    text = text.split('\n').map(l => l.replace(/[ \t]+$/, '').replace(/^[ \t]+/, '')).join('\n');
+    // collapse repeated spaces/tabs within a line
+    text = text.replace(/[ \t]{2,}/g, ' ');
+    // collapse 3+ blank lines down to a single blank line between paragraphs
+    text = text.replace(/\n{3,}/g, '\n\n');
+    // drop leading/trailing blank lines
+    text = text.replace(/^\n+/, '').replace(/\n+$/, '');
+    return text;
+  }
+
   scanFileInput.addEventListener('change', async ()=>{
     const file = scanFileInput.files && scanFileInput.files[0];
     if(!file) return;
@@ -708,12 +759,57 @@
         alert('No text was recognized in that image. Try a clearer photo or screenshot.');
         return;
       }
-      if(scanCallback) scanCallback(text);
+      const cleaned = formatOcrText(text);
+      if(scanCallback) scanCallback(cleaned);
     }catch(e){
       scanOverlay.classList.remove('open');
       alert('Something went wrong reading that image. Please try again.');
     }
   });
+
+  function renderMoveChips(n){
+    const row = document.getElementById('moveRow');
+    if(!row) return;
+    const others = ['bible','grocery','other'].filter(c => c !== n.cat);
+    const labels = {bible:'Bible Notes', grocery:'Grocery', other:'Other'};
+    others.forEach(c=>{
+      const btn = document.createElement('button');
+      btn.className = 'move-chip ' + c;
+      btn.textContent = labels[c];
+      btn.addEventListener('click', ()=> moveNote(n, c));
+      row.appendChild(btn);
+    });
+  }
+
+  function moveNote(n, targetCat){
+    if(n.cat === targetCat) return;
+    const fromLabel = catLabel[n.cat];
+    const toLabel = catLabel[targetCat];
+    if(!confirm(`Move this note from ${fromLabel} to ${toLabel}? Its formatting will convert to match the new section.`)) return;
+
+    if(n.cat === 'grocery' && targetCat !== 'grocery'){
+      // items -> plain text body
+      n.body = (n.items || [])
+        .map(it => (it.checked ? '[x] ' : '[ ] ') + it.text)
+        .join('\n');
+      n.items = [];
+    } else if(n.cat !== 'grocery' && targetCat === 'grocery'){
+      // text body -> checklist items, one per line
+      const lines = (n.body || '').split('\n').map(l=>l.trim()).filter(Boolean);
+      n.items = lines.map(l => ({text:l, checked:false}));
+      n.body = '';
+    }
+
+    if(targetCat !== 'bible'){
+      n.ref = '';
+    }
+
+    n.cat = targetCat;
+    n.updated = Date.now();
+    scheduleSave();
+    currentCat = targetCat;
+    openNote(n.id);
+  }
 
   function closeEditor(){
     forceSave();

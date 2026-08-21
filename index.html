@@ -66,6 +66,22 @@
     margin:0;
     letter-spacing:0.3px;
   }
+  .header-actions{
+    margin-left:auto;
+    display:flex;
+    gap:6px;
+  }
+  .header-btn{
+    background:rgba(251,246,233,0.1);
+    border:1px solid rgba(251,246,233,0.25);
+    color:#FBF6E9;
+    font-size:14px;
+    padding:6px 9px;
+    border-radius:8px;
+    cursor:pointer;
+    line-height:1;
+  }
+  .header-btn:active{opacity:0.7;}
   .brand span{
     font-size:11px;
     color:#B9C2D1;
@@ -441,6 +457,10 @@
     <div class="brand">
       <h1>Micah715</h1>
       <span>"marvelous things..." — a place for your notes</span>
+      <div class="header-actions">
+        <button class="header-btn" id="backupBtn" title="Download a backup of all notes">⬇ Backup</button>
+        <button class="header-btn" id="restoreBtn" title="Restore notes from a backup file">⬆ Restore</button>
+      </div>
     </div>
     <div class="today-date" id="todayDate"></div>
     <div class="ribbons">
@@ -472,6 +492,7 @@
   </div>
 
   <input type="file" id="scanFileInput" accept="image/*" capture="environment" style="display:none;">
+  <input type="file" id="restoreFileInput" accept="application/json,.json" style="display:none;">
 
 </div>
 
@@ -823,6 +844,61 @@
   });
   document.getElementById('fab').addEventListener('click', ()=> newNote(currentCat));
   document.getElementById('back').addEventListener('click', closeEditor);
+
+  // ---- Backup (export) / Restore (import) ----
+  document.getElementById('backupBtn').addEventListener('click', ()=>{
+    forceSave();
+    const payload = {
+      app: 'Micah715',
+      exportedAt: new Date().toISOString(),
+      notes: notes
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const dateStr = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = `micah715-backup-${dateStr}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  const restoreFileInput = document.getElementById('restoreFileInput');
+  document.getElementById('restoreBtn').addEventListener('click', ()=>{
+    restoreFileInput.value = '';
+    restoreFileInput.click();
+  });
+
+  restoreFileInput.addEventListener('change', ()=>{
+    const file = restoreFileInput.files && restoreFileInput.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      let incoming;
+      try{
+        const parsed = JSON.parse(reader.result);
+        incoming = Array.isArray(parsed) ? parsed : parsed.notes;
+        if(!Array.isArray(incoming)) throw new Error('bad format');
+      }catch(e){
+        alert('That file doesn\'t look like a valid Micah715 backup.');
+        return;
+      }
+      const existingIds = new Set(notes.map(n=>n.id));
+      const newOnes = incoming.filter(n => n && n.id && !existingIds.has(n.id));
+      const skipped = incoming.length - newOnes.length;
+      const msg = `This backup contains ${incoming.length} note(s). ${newOnes.length} will be added` +
+        (skipped > 0 ? `, ${skipped} already exist and will be skipped.` : '.') +
+        ` Continue?`;
+      if(!confirm(msg)) return;
+      notes = notes.concat(newOnes);
+      scheduleSave();
+      render();
+      alert(`Restored ${newOnes.length} note(s).`);
+    };
+    reader.readAsText(file);
+  });
 
   const dateEl = document.getElementById('todayDate');
   if(dateEl){

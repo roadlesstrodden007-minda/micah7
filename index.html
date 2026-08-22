@@ -465,7 +465,7 @@
     <div class="today-date" id="todayDate"></div>
     <div class="ribbons">
       <button class="ribbon bible active" data-cat="bible"><span class="icon">✝</span>Bible Notes</button>
-      <button class="ribbon grocery" data-cat="grocery"><span class="icon">🛒</span>List</button>
+      <button class="ribbon grocery" data-cat="grocery"><span class="icon">🛒</span>Grocery</button>
       <button class="ribbon other" data-cat="other"><span class="icon">✎</span>Other</button>
     </div>
   </header>
@@ -759,14 +759,58 @@
     return text;
   }
 
+  // Preprocesses a screenshot before OCR: upscales small images, converts to
+  // grayscale, auto-inverts dark-mode screenshots (light text on dark bg), and
+  // binarizes to crisp black-on-white — this dramatically improves accuracy
+  // for typed/digital text compared to feeding the raw image straight in.
+  async function preprocessImageForOCR(file){
+    const img = await new Promise((resolve, reject)=>{
+      const image = new Image();
+      image.onload = ()=>resolve(image);
+      image.onerror = reject;
+      image.src = URL.createObjectURL(file);
+    });
+    const maxDim = Math.max(img.width, img.height);
+    const scale = maxDim < 1400 ? (1400 / maxDim) : 1;
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    URL.revokeObjectURL(img.src);
+
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const d = imgData.data;
+    let total = 0;
+    for(let i=0; i<d.length; i+=4){
+      const gray = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+      d[i] = d[i+1] = d[i+2] = gray;
+      total += gray;
+    }
+    const avg = total / (d.length/4);
+    const invert = avg < 128; // light text on dark background
+    const threshold = 150;
+    for(let i=0; i<d.length; i+=4){
+      let v = d[i];
+      if(invert) v = 255 - v;
+      v = v > threshold ? 255 : 0;
+      d[i] = d[i+1] = d[i+2] = v;
+    }
+    ctx.putImageData(imgData, 0, 0);
+    return canvas;
+  }
+
   scanFileInput.addEventListener('change', async ()=>{
     const file = scanFileInput.files && scanFileInput.files[0];
     if(!file) return;
     scanOverlay.classList.add('open');
-    scanLabel.textContent = 'Reading your screenshot…';
+    scanLabel.textContent = 'Preparing image…';
     scanPct.textContent = '';
+    let worker;
     try{
-      const result = await Tesseract.recognize(file, 'eng', {
+      const canvas = await preprocessImageForOCR(file);
+      scanLabel.textContent = 'Reading your screenshot…';
+      worker = await Tesseract.createWorker('eng', 1, {
         logger: msg=>{
           if(msg.status && typeof msg.progress === 'number'){
             scanLabel.textContent = msg.status.charAt(0).toUpperCase() + msg.status.slice(1) + '…';
@@ -774,15 +818,23 @@
           }
         }
       });
-      const text = (result && result.data && result.data.text || '').trim();
+      // Treat the screenshot as one uniform block of text (better than
+      // full auto-layout detection for note screenshots).
+      await worker.setParameters({ tessedit_pageseg_mode: '6' });
+      const { data: { text } } = await worker.recognize(canvas);
+      await worker.terminate();
+      worker = null;
+
+      const trimmed = (text || '').trim();
       scanOverlay.classList.remove('open');
-      if(!text){
-        alert('No text was recognized in that image. Try a clearer photo or screenshot.');
+      if(!trimmed){
+        alert('No text was recognized in that image. Try a clearer, higher-resolution screenshot.');
         return;
       }
-      const cleaned = formatOcrText(text);
+      const cleaned = formatOcrText(trimmed);
       if(scanCallback) scanCallback(cleaned);
     }catch(e){
+      if(worker){ try{ await worker.terminate(); }catch(_){} }
       scanOverlay.classList.remove('open');
       alert('Something went wrong reading that image. Please try again.');
     }

@@ -128,6 +128,59 @@
   }
   .ribbon .icon{display:block; font-size:16px; margin-bottom:2px;}
 
+  .search-bar{
+    position:relative;
+    margin:14px 0 -4px 0;
+  }
+  .search-bar input{
+    width:100%;
+    background:var(--paper);
+    border:1px solid rgba(251,246,233,0.15);
+    border-radius:20px;
+    padding:9px 14px 9px 34px;
+    font-family:'Inter',sans-serif;
+    font-size:13.5px;
+    color:var(--ink);
+  }
+  .search-bar input:focus{outline:none; border-color:var(--gold);}
+  .search-bar .search-icon{
+    position:absolute;
+    left:12px;
+    top:50%;
+    transform:translateY(-50%);
+    font-size:13px;
+    color:var(--ink-soft);
+    pointer-events:none;
+  }
+  .search-bar .clear-search{
+    position:absolute;
+    right:8px;
+    top:50%;
+    transform:translateY(-50%);
+    background:none;
+    border:none;
+    color:var(--ink-soft);
+    font-size:15px;
+    cursor:pointer;
+    padding:4px 6px;
+    display:none;
+  }
+  .search-bar.has-text .clear-search{display:block;}
+
+  .cat-badge{
+    display:inline-block;
+    font-size:10px;
+    font-weight:700;
+    letter-spacing:0.4px;
+    text-transform:uppercase;
+    padding:2px 8px;
+    border-radius:10px;
+    margin-bottom:6px;
+  }
+  .cat-badge.bible{background:var(--gold-soft); color:#8A6A1E;}
+  .cat-badge.grocery{background:var(--sage-soft); color:#3F5A3F;}
+  .cat-badge.other{background:var(--clay-soft); color:#7A4230;}
+
   /* ---------- MAIN ---------- */
   main{
     flex:1;
@@ -468,6 +521,11 @@
       <button class="ribbon grocery" data-cat="grocery"><span class="icon">🛒</span>Grocery</button>
       <button class="ribbon other" data-cat="other"><span class="icon">✎</span>Other</button>
     </div>
+    <div class="search-bar" id="searchBar">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Search all notes…">
+      <button class="clear-search" id="clearSearch">✕</button>
+    </div>
   </header>
 
   <main id="list"></main>
@@ -503,6 +561,7 @@
   let currentCat = 'bible';
   let openId = null;
   let saveTimer = null;
+  let searchTerm = '';
 
   const catLabel = {bible:'Bible Notes', grocery:'Grocery', other:'Other'};
 
@@ -555,14 +614,32 @@
     return d.toLocaleDateString(undefined,{ weekday:'long', month:'long', day:'numeric', year:'numeric' });
   }
 
+  function matchesSearch(n, term){
+    const t = term.toLowerCase();
+    if((n.title||'').toLowerCase().includes(t)) return true;
+    if(n.cat === 'bible' && (n.ref||'').toLowerCase().includes(t)) return true;
+    if(n.cat === 'grocery'){
+      return (n.items||[]).some(it => (it.text||'').toLowerCase().includes(t));
+    }
+    return (n.body||'').toLowerCase().includes(t);
+  }
+
   function render(){
     // ribbons
     document.querySelectorAll('.ribbon').forEach(r=>{
       r.classList.toggle('active', r.dataset.cat === currentCat);
     });
     const list = document.getElementById('list');
-    const items = notes.filter(n=>n.cat===currentCat).sort((a,b)=>b.updated-a.updated);
+    const isSearching = searchTerm.trim() !== '';
+    const items = isSearching
+      ? notes.filter(n => matchesSearch(n, searchTerm.trim())).sort((a,b)=>b.updated-a.updated)
+      : notes.filter(n=>n.cat===currentCat).sort((a,b)=>b.updated-a.updated);
+
     if(items.length===0){
+      if(isSearching){
+        list.innerHTML = `<div class="empty"><span class="glyph">🔍</span><p>No notes match "${escapeHtml(searchTerm.trim())}".</p></div>`;
+        return;
+      }
       const glyphs = {bible:'✝', grocery:'🛒', other:'✎'};
       const msgs = {
         bible:'No notes yet. Tap + to record a reflection or study.',
@@ -573,11 +650,13 @@
       return;
     }
     list.innerHTML = items.map(n=>{
+      const badge = isSearching ? `<span class="cat-badge ${n.cat}">${catLabel[n.cat]}</span>` : '';
       if(n.cat==='grocery'){
         const total = (n.items||[]).length;
         const done = (n.items||[]).filter(i=>i.checked).length;
         const preview = (n.items||[]).slice(0,3).map(i=>i.text).filter(Boolean).join(', ') || 'Empty list';
         return `<div class="note-card grocery" data-id="${n.id}">
+          ${badge}
           <h3>${escapeHtml(n.title||'Untitled list')}</h3>
           <div class="snippet">${escapeHtml(preview)}</div>
           <div class="progress">${done}/${total} checked off</div>
@@ -586,6 +665,7 @@
       } else {
         const ref = n.cat==='bible' && n.ref ? `<div class="ref">${escapeHtml(n.ref)}</div>` : '';
         return `<div class="note-card ${n.cat}" data-id="${n.id}">
+          ${badge}
           ${ref}
           <h3>${escapeHtml(n.title||'Untitled')}</h3>
           <div class="snippet">${escapeHtml(n.body||'')}</div>
@@ -892,10 +972,31 @@
   }
 
   document.querySelectorAll('.ribbon').forEach(r=>{
-    r.addEventListener('click', ()=>{ currentCat = r.dataset.cat; render(); });
+    r.addEventListener('click', ()=>{
+      currentCat = r.dataset.cat;
+      searchTerm = '';
+      const si = document.getElementById('searchInput');
+      if(si) si.value = '';
+      document.getElementById('searchBar').classList.remove('has-text');
+      render();
+    });
   });
   document.getElementById('fab').addEventListener('click', ()=> newNote(currentCat));
   document.getElementById('back').addEventListener('click', closeEditor);
+
+  const searchInput = document.getElementById('searchInput');
+  const searchBar = document.getElementById('searchBar');
+  searchInput.addEventListener('input', e=>{
+    searchTerm = e.target.value;
+    searchBar.classList.toggle('has-text', searchTerm.trim() !== '');
+    render();
+  });
+  document.getElementById('clearSearch').addEventListener('click', ()=>{
+    searchTerm = '';
+    searchInput.value = '';
+    searchBar.classList.remove('has-text');
+    render();
+  });
 
   // ---- Backup (export) / Restore (import) ----
   document.getElementById('backupBtn').addEventListener('click', ()=>{

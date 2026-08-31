@@ -100,16 +100,22 @@
     display:flex;
     gap:6px;
     padding-left:2px;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
   }
+  .ribbons::-webkit-scrollbar{display:none;}
   .ribbon{
-    flex:1;
+    flex:0 0 auto;
+    min-width:78px;
     border:none;
     cursor:pointer;
     font-family:'Inter',sans-serif;
     font-weight:600;
     font-size:12.5px;
-    color:var(--ink);
-    padding:12px 4px 22px 4px;
+    color:var(--sec-text, var(--ink));
+    background:var(--sec-bg, var(--gold-soft));
+    padding:12px 10px 22px 10px;
     text-align:center;
     position:relative;
     border-radius:8px 8px 0 0;
@@ -117,16 +123,29 @@
     transition:transform .18s ease, padding-bottom .18s ease;
     clip-path:polygon(0 0,100% 0,100% 78%,50% 100%,0 78%);
     opacity:0.72;
+    white-space:nowrap;
   }
-  .ribbon.bible{background:var(--gold-soft); color:#5C4813;}
-  .ribbon.grocery{background:var(--sage-soft); color:#33472F;}
-  .ribbon.other{background:var(--clay-soft); color:#5C2E1D;}
   .ribbon.active{
     transform:translateY(0);
     opacity:1;
     box-shadow:0 -2px 10px rgba(0,0,0,0.18);
   }
   .ribbon .icon{display:block; font-size:16px; margin-bottom:2px;}
+  .add-section-chip{
+    flex:0 0 auto;
+    align-self:flex-end;
+    margin-bottom:10px;
+    background:rgba(251,246,233,0.08);
+    border:1px dashed rgba(251,246,233,0.45);
+    color:#FBF6E9;
+    border-radius:16px;
+    padding:7px 12px;
+    font-size:12px;
+    font-weight:600;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .add-section-chip:active{opacity:0.7;}
 
   .search-bar{
     position:relative;
@@ -176,10 +195,9 @@
     padding:2px 8px;
     border-radius:10px;
     margin-bottom:6px;
+    background:var(--sec-bg, var(--gold-soft));
+    color:var(--sec-text, #8A6A1E);
   }
-  .cat-badge.bible{background:var(--gold-soft); color:#8A6A1E;}
-  .cat-badge.grocery{background:var(--sage-soft); color:#3F5A3F;}
-  .cat-badge.other{background:var(--clay-soft); color:#7A4230;}
 
   /* ---------- MAIN ---------- */
   main{
@@ -203,11 +221,9 @@
     margin-bottom:12px;
     cursor:pointer;
     position:relative;
-    border-left:4px solid var(--gold);
+    border-left:4px solid var(--sec-border, var(--gold));
     box-shadow:0 1px 3px rgba(43,42,40,0.05);
   }
-  .note-card.grocery{border-left-color:var(--sage);}
-  .note-card.other{border-left-color:var(--clay);}
   .note-card h3{
     font-family:'Lora',serif;
     font-size:16.5px;
@@ -249,8 +265,12 @@
     background:var(--navy);
     color:#FBF6E9;
     border:none;
-    font-size:26px;
-    line-height:56px;
+    font-size:28px;
+    line-height:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:0;
     text-align:center;
     box-shadow:0 6px 16px rgba(36,52,77,0.4);
     cursor:pointer;
@@ -443,10 +463,152 @@
     cursor:pointer;
     font-family:'Inter',sans-serif;
   }
-  .move-chip.bible{border-color:var(--gold); color:#8A6A1E;}
-  .move-chip.grocery{border-color:var(--sage); color:#3F5A3F;}
-  .move-chip.other{border-color:var(--clay); color:#7A4230;}
+  .move-chip{
+    background:none;
+    border:1px solid var(--sec-border, var(--line));
+    color:var(--sec-text, var(--ink));
+    font-size:12px;
+    font-weight:600;
+    padding:6px 12px;
+    border-radius:16px;
+    cursor:pointer;
+    font-family:'Inter',sans-serif;
+  }
   .move-chip:active{opacity:0.7;}
+
+  /* ---------- SECTION MANAGER MODAL ---------- */
+  .modal-overlay{
+    position:absolute;
+    inset:0;
+    background:rgba(36,52,77,0.55);
+    display:none;
+    align-items:flex-end;
+    justify-content:center;
+    z-index:60;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-card{
+    width:100%;
+    max-height:82vh;
+    background:var(--parchment);
+    border-radius:18px 18px 0 0;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+  .modal-head{
+    background:var(--navy);
+    padding:16px 18px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .modal-head h2{
+    font-family:'Lora',serif;
+    color:#FBF6E9;
+    font-size:17px;
+    margin:0;
+  }
+  .modal-head button{
+    background:none;
+    border:none;
+    color:#FBF6E9;
+    font-size:18px;
+    cursor:pointer;
+  }
+  .modal-body{
+    padding:16px 18px 24px 18px;
+    overflow-y:auto;
+  }
+  .sec-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .sec-row .sec-icon{
+    width:30px; height:30px;
+    border-radius:8px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:14px;
+    flex-shrink:0;
+  }
+  .sec-row .sec-info{flex:1;}
+  .sec-row .sec-name{font-size:14px; font-weight:600; color:var(--ink);}
+  .sec-row .sec-type{font-size:11px; color:var(--ink-soft);}
+  .sec-row .sec-tag{
+    font-size:10px;
+    color:var(--ink-soft);
+    font-style:italic;
+    font-family:'Lora',serif;
+  }
+  .sec-row .sec-delete{
+    background:none;
+    border:1px solid #C7897A;
+    color:#A8402A;
+    font-size:11px;
+    padding:5px 10px;
+    border-radius:14px;
+    cursor:pointer;
+  }
+  .add-section-form{
+    margin-top:16px;
+  }
+  .add-section-form label{
+    display:block;
+    font-size:11px;
+    color:var(--ink-soft);
+    margin:12px 0 5px 0;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.3px;
+  }
+  .add-section-form input[type=text]{
+    width:100%;
+    border:1px solid var(--line);
+    background:var(--paper);
+    border-radius:10px;
+    padding:10px 12px;
+    font-size:14px;
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+  }
+  .add-section-form input[type=text]:focus{outline:none; border-color:var(--gold);}
+  .type-toggle{
+    display:flex;
+    gap:8px;
+  }
+  .type-opt{
+    flex:1;
+    padding:10px;
+    border:1px solid var(--line);
+    background:var(--paper);
+    border-radius:10px;
+    font-size:13px;
+    font-weight:600;
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .type-opt.active{
+    border-color:var(--gold);
+    background:var(--gold-soft);
+    color:#5C4813;
+  }
+  .add-section-submit{
+    width:100%;
+    margin-top:16px;
+    background:var(--navy);
+    color:#FBF6E9;
+    border:none;
+    padding:12px;
+    border-radius:10px;
+    font-size:14px;
+    font-weight:700;
+    cursor:pointer;
+    font-family:'Inter',sans-serif;
+  }
+  .add-section-submit:active{opacity:0.85;}
 
   /* Grocery items */
   .item-row{
@@ -511,16 +673,13 @@
       <h1>Micah715</h1>
       <span>"marvelous things..." — a place for your notes</span>
       <div class="header-actions">
+        <button class="header-btn" id="manageSectionsBtn" title="Manage sections">⚙</button>
         <button class="header-btn" id="backupBtn" title="Download a backup of all notes">⬇ Backup</button>
         <button class="header-btn" id="restoreBtn" title="Restore notes from a backup file">⬆ Restore</button>
       </div>
     </div>
     <div class="today-date" id="todayDate"></div>
-    <div class="ribbons">
-      <button class="ribbon bible active" data-cat="bible"><span class="icon">✝</span>Bible Notes</button>
-      <button class="ribbon grocery" data-cat="grocery"><span class="icon">🛒</span>Grocery</button>
-      <button class="ribbon other" data-cat="other"><span class="icon">✎</span>Other</button>
-    </div>
+    <div class="ribbons" id="ribbons"></div>
     <div class="search-bar" id="searchBar">
       <span class="search-icon">🔍</span>
       <input type="text" id="searchInput" placeholder="Search all notes…">
@@ -552,6 +711,30 @@
   <input type="file" id="scanFileInput" accept="image/*" capture="environment" style="display:none;">
   <input type="file" id="restoreFileInput" accept="application/json,.json" style="display:none;">
 
+  <div class="modal-overlay" id="sectionModal">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2>Manage Sections</h2>
+        <button id="closeSectionModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="sectionList"></div>
+        <div class="add-section-form">
+          <label>New section name</label>
+          <input type="text" id="newSecName" placeholder="e.g. Recipes, Lyrics, Journal…">
+          <label>Type</label>
+          <div class="type-toggle">
+            <button type="button" class="type-opt active" data-type="text" id="typeTextBtn">📝 Notes</button>
+            <button type="button" class="type-opt" data-type="checklist" id="typeChecklistBtn">☑ Checklist</button>
+          </div>
+          <label>Icon (optional, one emoji)</label>
+          <input type="text" id="newSecIcon" maxlength="2" placeholder="📁">
+          <button class="add-section-submit" id="addSectionBtn">+ Add Section</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -563,7 +746,61 @@
   let saveTimer = null;
   let searchTerm = '';
 
-  const catLabel = {bible:'Bible Notes', grocery:'Grocery', other:'Other'};
+  const SECTIONS_KEY = 'micah715-sections-v1';
+  let sections = [];
+  let newSecType = 'text';
+
+  // Fixed colors for the three original sections; custom sections rotate
+  // through this palette in creation order.
+  const BUILTIN_COLORS = {
+    bible:   { bg:'#EFE3C2', text:'#5C4813', border:'#B8912F' },
+    grocery: { bg:'#DCE7DC', text:'#33472F', border:'#6E8B6E' },
+    other:   { bg:'#EFDCD4', text:'#7A4230', border:'#A85D42' }
+  };
+  const CUSTOM_PALETTE = [
+    { bg:'#DCE3EF', text:'#2F4A6E', border:'#5C7FA8' }, // dusty blue
+    { bg:'#E9DCEF', text:'#5A2F6E', border:'#8C5CA8' }, // plum
+    { bg:'#D9EDEA', text:'#1F5C54', border:'#4F9C8C' }, // teal
+    { bg:'#F0DCE2', text:'#7A2F45', border:'#B06E86' }, // rose
+    { bg:'#E6E7D4', text:'#56582A', border:'#8C8C4F' }, // olive
+    { bg:'#DEE2E6', text:'#33404A', border:'#5C6B7A' }  // slate
+  ];
+
+  function defaultSections(){
+    return [
+      { id:'bible',   name:'Bible Notes', icon:'✝',  type:'text',      hasRef:true,  builtin:true },
+      { id:'grocery', name:'Grocery',     icon:'🛒', type:'checklist', hasRef:false, builtin:true },
+      { id:'other',   name:'Other',       icon:'✎',  type:'text',      hasRef:false, builtin:true }
+    ];
+  }
+
+  function loadSections(){
+    try{
+      const raw = localStorage.getItem(SECTIONS_KEY);
+      sections = raw ? JSON.parse(raw) : defaultSections();
+      if(!Array.isArray(sections) || sections.length === 0) sections = defaultSections();
+    }catch(e){
+      sections = defaultSections();
+    }
+  }
+
+  function saveSections(){
+    try{ localStorage.setItem(SECTIONS_KEY, JSON.stringify(sections)); }catch(e){}
+  }
+
+  function getSection(id){
+    return sections.find(s => s.id === id);
+  }
+
+  function sectionColor(section){
+    if(!section) return { bg:'#EFE3C2', text:'#5C4813', border:'#B8912F' };
+    if(section.builtin) return BUILTIN_COLORS[section.id] || CUSTOM_PALETTE[0];
+    return section.color || CUSTOM_PALETTE[0];
+  }
+
+  function colorVarStyle(color){
+    return `--sec-bg:${color.bg}; --sec-text:${color.text}; --sec-border:${color.border};`;
+  }
 
   async function loadNotes(){
     try{
@@ -617,18 +854,39 @@
   function matchesSearch(n, term){
     const t = term.toLowerCase();
     if((n.title||'').toLowerCase().includes(t)) return true;
-    if(n.cat === 'bible' && (n.ref||'').toLowerCase().includes(t)) return true;
-    if(n.cat === 'grocery'){
+    const sec = getSection(n.cat);
+    if(sec && sec.hasRef && (n.ref||'').toLowerCase().includes(t)) return true;
+    const isChecklist = sec ? sec.type === 'checklist' : (n.items && n.items.length > 0);
+    if(isChecklist){
       return (n.items||[]).some(it => (it.text||'').toLowerCase().includes(t));
     }
     return (n.body||'').toLowerCase().includes(t);
   }
 
-  function render(){
-    // ribbons
-    document.querySelectorAll('.ribbon').forEach(r=>{
-      r.classList.toggle('active', r.dataset.cat === currentCat);
+  function renderRibbons(){
+    const wrap = document.getElementById('ribbons');
+    wrap.innerHTML = sections.map(s=>{
+      const c = sectionColor(s);
+      return `<button class="ribbon ${s.id===currentCat?'active':''}" data-cat="${s.id}" style="${colorVarStyle(c)}">
+        <span class="icon">${s.icon||'📁'}</span>${escapeHtml(s.name)}
+      </button>`;
+    }).join('') + `<button class="add-section-chip" id="addSectionChip">+ Section</button>`;
+
+    wrap.querySelectorAll('.ribbon').forEach(r=>{
+      r.addEventListener('click', ()=>{
+        currentCat = r.dataset.cat;
+        searchTerm = '';
+        const si = document.getElementById('searchInput');
+        if(si) si.value = '';
+        document.getElementById('searchBar').classList.remove('has-text');
+        render();
+      });
     });
+    document.getElementById('addSectionChip').addEventListener('click', openSectionModal);
+  }
+
+  function render(){
+    renderRibbons();
     const list = document.getElementById('list');
     const isSearching = searchTerm.trim() !== '';
     const items = isSearching
@@ -640,22 +898,27 @@
         list.innerHTML = `<div class="empty"><span class="glyph">🔍</span><p>No notes match "${escapeHtml(searchTerm.trim())}".</p></div>`;
         return;
       }
-      const glyphs = {bible:'✝', grocery:'🛒', other:'✎'};
-      const msgs = {
-        bible:'No notes yet. Tap + to record a reflection or study.',
-        grocery:'No lists yet. Tap + to start a grocery list.',
-        other:'Nothing here yet. Tap + to jot something down.'
-      };
-      list.innerHTML = `<div class="empty"><span class="glyph">${glyphs[currentCat]}</span><p>${msgs[currentCat]}</p></div>`;
+      const sec = getSection(currentCat);
+      const glyph = sec ? (sec.icon || '📁') : '📁';
+      const msg = sec
+        ? (sec.type === 'checklist'
+            ? `No lists yet in ${escapeHtml(sec.name)}. Tap + to start one.`
+            : `Nothing here yet in ${escapeHtml(sec.name)}. Tap + to add a note.`)
+        : 'Nothing here yet. Tap + to add something.';
+      list.innerHTML = `<div class="empty"><span class="glyph">${glyph}</span><p>${msg}</p></div>`;
       return;
     }
     list.innerHTML = items.map(n=>{
-      const badge = isSearching ? `<span class="cat-badge ${n.cat}">${catLabel[n.cat]}</span>` : '';
-      if(n.cat==='grocery'){
+      const sec = getSection(n.cat);
+      const c = sectionColor(sec);
+      const style = colorVarStyle(c);
+      const isChecklist = sec ? sec.type === 'checklist' : false;
+      const badge = isSearching ? `<span class="cat-badge" style="${style}">${sec ? escapeHtml(sec.name) : 'Unknown'}</span>` : '';
+      if(isChecklist){
         const total = (n.items||[]).length;
         const done = (n.items||[]).filter(i=>i.checked).length;
         const preview = (n.items||[]).slice(0,3).map(i=>i.text).filter(Boolean).join(', ') || 'Empty list';
-        return `<div class="note-card grocery" data-id="${n.id}">
+        return `<div class="note-card" data-id="${n.id}" style="${style}">
           ${badge}
           <h3>${escapeHtml(n.title||'Untitled list')}</h3>
           <div class="snippet">${escapeHtml(preview)}</div>
@@ -663,8 +926,8 @@
           <div class="meta">${fmtTime(n.updated)}</div>
         </div>`;
       } else {
-        const ref = n.cat==='bible' && n.ref ? `<div class="ref">${escapeHtml(n.ref)}</div>` : '';
-        return `<div class="note-card ${n.cat}" data-id="${n.id}">
+        const ref = sec && sec.hasRef && n.ref ? `<div class="ref">${escapeHtml(n.ref)}</div>` : '';
+        return `<div class="note-card" data-id="${n.id}" style="${style}">
           ${badge}
           ${ref}
           <h3>${escapeHtml(n.title||'Untitled')}</h3>
@@ -696,10 +959,11 @@
   function openNote(id, isNew){
     openId = id;
     const n = notes.find(x=>x.id===id);
+    const section = getSection(n.cat) || { name:'Note', type:'text', hasRef:false, icon:'📁' };
     const body = document.getElementById('editorBody');
     document.getElementById('editor').classList.add('open');
 
-    if(n.cat === 'grocery'){
+    if(section.type === 'checklist'){
       body.innerHTML = `
         <input type="text" id="f-title" placeholder="List name" value="${escapeHtml(n.title)}">
         <div class="entry-date">${fmtEntryDate(n.created)}</div>
@@ -728,19 +992,19 @@
       }));
       if(isNew) setTimeout(()=>document.getElementById('f-title').focus(), 50);
     } else {
-      const isBible = n.cat === 'bible';
+      const hasRef = !!section.hasRef;
       body.innerHTML = `
-        <input type="text" id="f-title" placeholder="${isBible ? 'Title / topic' : 'Title'}" value="${escapeHtml(n.title)}">
-        ${isBible ? `<input type="text" class="ref-input" id="f-ref" placeholder="Scripture reference (e.g. Micah 7:15)" value="${escapeHtml(n.ref)}">` : ''}
+        <input type="text" id="f-title" placeholder="${hasRef ? 'Title / topic' : 'Title'}" value="${escapeHtml(n.title)}">
+        ${hasRef ? `<input type="text" class="ref-input" id="f-ref" placeholder="Scripture reference (e.g. Micah 7:15)" value="${escapeHtml(n.ref)}">` : ''}
         <div class="entry-date">${fmtEntryDate(n.created)}</div>
         <div class="move-row" id="moveRow"><span class="move-label">Move to:</span></div>
         <hr class="divider">
         <button class="scan-btn" id="scanBtn">📷 Scan a screenshot of notes</button>
-        <textarea id="f-body" placeholder="${isBible ? 'Write your reflection or study notes…' : 'Write your note…'}">${escapeHtml(n.body)}</textarea>
+        <textarea id="f-body" placeholder="${hasRef ? 'Write your reflection or study notes…' : 'Write your note…'}">${escapeHtml(n.body)}</textarea>
         <button class="delete-btn" id="delBtn">Delete note</button>
       `;
       document.getElementById('f-title').addEventListener('input', e=>{ n.title=e.target.value; n.updated=Date.now(); scheduleSave(); });
-      if(isBible) document.getElementById('f-ref').addEventListener('input', e=>{ n.ref=e.target.value; n.updated=Date.now(); scheduleSave(); });
+      if(hasRef) document.getElementById('f-ref').addEventListener('input', e=>{ n.ref=e.target.value; n.updated=Date.now(); scheduleSave(); });
       document.getElementById('f-body').addEventListener('input', e=>{ n.body=e.target.value; n.updated=Date.now(); scheduleSave(); });
       document.getElementById('delBtn').addEventListener('click', ()=>deleteNote(n.id));
       document.getElementById('scanBtn').addEventListener('click', ()=> triggerScan(text=>{
@@ -923,37 +1187,39 @@
   function renderMoveChips(n){
     const row = document.getElementById('moveRow');
     if(!row) return;
-    const others = ['bible','grocery','other'].filter(c => c !== n.cat);
-    const labels = {bible:'Bible Notes', grocery:'Grocery', other:'Other'};
-    others.forEach(c=>{
+    const others = sections.filter(s => s.id !== n.cat);
+    others.forEach(s=>{
+      const c = sectionColor(s);
       const btn = document.createElement('button');
-      btn.className = 'move-chip ' + c;
-      btn.textContent = labels[c];
-      btn.addEventListener('click', ()=> moveNote(n, c));
+      btn.className = 'move-chip';
+      btn.style.cssText = colorVarStyle(c);
+      btn.textContent = s.name;
+      btn.addEventListener('click', ()=> moveNote(n, s.id));
       row.appendChild(btn);
     });
   }
 
   function moveNote(n, targetCat){
     if(n.cat === targetCat) return;
-    const fromLabel = catLabel[n.cat];
-    const toLabel = catLabel[targetCat];
-    if(!confirm(`Move this note from ${fromLabel} to ${toLabel}? Its formatting will convert to match the new section.`)) return;
+    const fromSec = getSection(n.cat);
+    const toSec = getSection(targetCat);
+    if(!fromSec || !toSec) return;
+    if(!confirm(`Move this note from ${fromSec.name} to ${toSec.name}? Its formatting will convert to match the new section.`)) return;
 
-    if(n.cat === 'grocery' && targetCat !== 'grocery'){
+    if(fromSec.type === 'checklist' && toSec.type !== 'checklist'){
       // items -> plain text body
       n.body = (n.items || [])
         .map(it => (it.checked ? '[x] ' : '[ ] ') + it.text)
         .join('\n');
       n.items = [];
-    } else if(n.cat !== 'grocery' && targetCat === 'grocery'){
+    } else if(fromSec.type !== 'checklist' && toSec.type === 'checklist'){
       // text body -> checklist items, one per line
       const lines = (n.body || '').split('\n').map(l=>l.trim()).filter(Boolean);
       n.items = lines.map(l => ({text:l, checked:false}));
       n.body = '';
     }
 
-    if(targetCat !== 'bible'){
+    if(!toSec.hasRef){
       n.ref = '';
     }
 
@@ -971,18 +1237,104 @@
     render();
   }
 
-  document.querySelectorAll('.ribbon').forEach(r=>{
-    r.addEventListener('click', ()=>{
-      currentCat = r.dataset.cat;
-      searchTerm = '';
-      const si = document.getElementById('searchInput');
-      if(si) si.value = '';
-      document.getElementById('searchBar').classList.remove('has-text');
-      render();
-    });
-  });
   document.getElementById('fab').addEventListener('click', ()=> newNote(currentCat));
   document.getElementById('back').addEventListener('click', closeEditor);
+
+  // ---- Section manager (add / view / delete custom sections) ----
+  const sectionModal = document.getElementById('sectionModal');
+  const typeTextBtn = document.getElementById('typeTextBtn');
+  const typeChecklistBtn = document.getElementById('typeChecklistBtn');
+
+  function openSectionModal(){
+    renderSectionList();
+    sectionModal.classList.add('open');
+    setTimeout(()=>document.getElementById('newSecName').focus(), 50);
+  }
+  function closeSectionModal(){
+    sectionModal.classList.remove('open');
+  }
+  document.getElementById('manageSectionsBtn').addEventListener('click', openSectionModal);
+  document.getElementById('closeSectionModal').addEventListener('click', closeSectionModal);
+
+  function renderSectionList(){
+    const wrap = document.getElementById('sectionList');
+    wrap.innerHTML = sections.map(s=>{
+      const c = sectionColor(s);
+      const count = notes.filter(n=>n.cat===s.id).length;
+      const typeLabel = s.type === 'checklist' ? 'Checklist' : 'Notes';
+      return `<div class="sec-row">
+        <div class="sec-icon" style="background:${c.bg}; color:${c.text};">${s.icon||'📁'}</div>
+        <div class="sec-info">
+          <div class="sec-name">${escapeHtml(s.name)}</div>
+          <div class="sec-type">${typeLabel} · ${count} item${count===1?'':'s'}</div>
+        </div>
+        ${s.builtin
+          ? `<span class="sec-tag">default</span>`
+          : `<button class="sec-delete" data-id="${s.id}">Delete</button>`}
+      </div>`;
+    }).join('');
+
+    wrap.querySelectorAll('.sec-delete').forEach(btn=>{
+      btn.addEventListener('click', ()=> deleteSection(btn.dataset.id));
+    });
+  }
+
+  function deleteSection(id){
+    const sec = getSection(id);
+    if(!sec || sec.builtin) return;
+    const count = notes.filter(n=>n.cat===id).length;
+    const warning = count > 0
+      ? `Delete "${sec.name}"? This will also permanently delete its ${count} note${count===1?'':'s'}.`
+      : `Delete "${sec.name}"?`;
+    if(!confirm(warning)) return;
+    notes = notes.filter(n=>n.cat!==id);
+    sections = sections.filter(s=>s.id!==id);
+    saveSections();
+    scheduleSave();
+    if(currentCat === id) currentCat = 'bible';
+    renderSectionList();
+    render();
+  }
+
+  typeTextBtn.addEventListener('click', ()=>{
+    newSecType = 'text';
+    typeTextBtn.classList.add('active');
+    typeChecklistBtn.classList.remove('active');
+  });
+  typeChecklistBtn.addEventListener('click', ()=>{
+    newSecType = 'checklist';
+    typeChecklistBtn.classList.add('active');
+    typeTextBtn.classList.remove('active');
+  });
+
+  document.getElementById('addSectionBtn').addEventListener('click', ()=>{
+    const nameInput = document.getElementById('newSecName');
+    const iconInput = document.getElementById('newSecIcon');
+    const name = nameInput.value.trim();
+    if(!name){
+      alert('Please enter a name for the section.');
+      return;
+    }
+    const icon = iconInput.value.trim() || (newSecType === 'checklist' ? '☑' : '📝');
+    const customCount = sections.filter(s=>!s.builtin).length;
+    const color = CUSTOM_PALETTE[customCount % CUSTOM_PALETTE.length];
+    const id = 'sec_' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+
+    sections.push({
+      id, name, icon, type: newSecType, hasRef:false, builtin:false, color
+    });
+    saveSections();
+
+    nameInput.value = '';
+    iconInput.value = '';
+    newSecType = 'text';
+    typeTextBtn.classList.add('active');
+    typeChecklistBtn.classList.remove('active');
+
+    currentCat = id;
+    closeSectionModal();
+    render();
+  });
 
   const searchInput = document.getElementById('searchInput');
   const searchBar = document.getElementById('searchBar');
@@ -1004,7 +1356,8 @@
     const payload = {
       app: 'Micah715',
       exportedAt: new Date().toISOString(),
-      notes: notes
+      notes: notes,
+      sections: sections
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
     const url = URL.createObjectURL(blob);
@@ -1029,26 +1382,32 @@
     if(!file) return;
     const reader = new FileReader();
     reader.onload = ()=>{
-      let incoming;
+      let incoming, incomingSections;
       try{
         const parsed = JSON.parse(reader.result);
         incoming = Array.isArray(parsed) ? parsed : parsed.notes;
+        incomingSections = Array.isArray(parsed.sections) ? parsed.sections : [];
         if(!Array.isArray(incoming)) throw new Error('bad format');
       }catch(e){
         alert('That file doesn\'t look like a valid Micah715 backup.');
         return;
       }
+      const existingSecIds = new Set(sections.map(s=>s.id));
+      const newSections = incomingSections.filter(s => s && s.id && !existingSecIds.has(s.id));
+
       const existingIds = new Set(notes.map(n=>n.id));
       const newOnes = incoming.filter(n => n && n.id && !existingIds.has(n.id));
       const skipped = incoming.length - newOnes.length;
-      const msg = `This backup contains ${incoming.length} note(s). ${newOnes.length} will be added` +
+      const msg = `This backup contains ${incoming.length} note(s) and ${newSections.length} custom section(s) you don't have yet. ${newOnes.length} note(s) will be added` +
         (skipped > 0 ? `, ${skipped} already exist and will be skipped.` : '.') +
         ` Continue?`;
       if(!confirm(msg)) return;
+      sections = sections.concat(newSections);
+      saveSections();
       notes = notes.concat(newOnes);
       scheduleSave();
       render();
-      alert(`Restored ${newOnes.length} note(s).`);
+      alert(`Restored ${newOnes.length} note(s) and ${newSections.length} section(s).`);
     };
     reader.readAsText(file);
   });
@@ -1058,6 +1417,7 @@
     dateEl.textContent = new Date().toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric', year:'numeric' });
   }
 
+  loadSections();
   loadNotes();
 })();
 </script>

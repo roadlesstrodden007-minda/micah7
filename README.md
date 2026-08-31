@@ -31,13 +31,6 @@ A simple, personal note-taking app for Bible reflections, grocery lists, custom 
 ### Run it locally
 Just open `index.html` in any modern browser — no installation or server required.
 
-### Deploy with GitHub Pages
-1. Create a new **public** GitHub repository
-2. Upload this project's file and name it `index.html` (GitHub Pages serves this by default)
-3. Go to **Settings → Pages**, set Source to **Deploy from a branch**, branch `main`, folder `/ (root)`, then Save
-4. After a minute, your live link will appear at the top of that Pages settings screen — something like:
-   `https://yourusername.github.io/your-repo-name/`
-
 ### Install on your phone
 Open the live link in your mobile browser:
 - **iPhone (Safari):** Share → *Add to Home Screen*

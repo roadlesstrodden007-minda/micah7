@@ -4,6 +4,8 @@ A simple, personal note-taking app for Bible reflections, grocery lists, custom 
 
 > *"marvelous things..." — a place for your notes*
 
+### Live Page: https://roadlesstrodden007-minda.github.io/micah7/
+
 ## Features
 
 - **Bible Notes** — title, scripture reference, and reflection/study text
